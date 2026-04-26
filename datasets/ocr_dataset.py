@@ -34,6 +34,7 @@ class OCRDataset(Dataset):
         self,
         csv_path: str,
         vocab: Vocabulary,
+        data_dir: Optional[str] = None,
         target_height: int = 128,
         target_width: int = 2048,
         max_samples: Optional[int] = None,
@@ -50,6 +51,7 @@ class OCRDataset(Dataset):
         self.target_height = target_height
         self.target_width = target_width
         self.source_weights = source_weights or self.DEFAULT_SOURCE_WEIGHTS
+        self.data_dir = data_dir
 
     def __len__(self) -> int:
         return len(self.records)
@@ -57,6 +59,17 @@ class OCRDataset(Dataset):
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, int, float]:
         row = self.records.iloc[idx]
         img_path = row["image_path"]
+        
+        # If data_dir is provided, overwrite the absolute V:\ prefix
+        if self.data_dir is not None:
+            import os
+            # Normalize slashes
+            rel_path = img_path.replace("\\", "/")
+            # Strip V:/ or V:\
+            if rel_path.lower().startswith("v:/"):
+                rel_path = rel_path[3:]
+            img_path = os.path.join(self.data_dir, rel_path)
+
         label_text = row["label"]
 
         # Load and standardise image
@@ -103,6 +116,7 @@ def collate_ocr_batch(batch):
 
 def get_ocr_dataloaders(
     vocab: Vocabulary,
+    data_dir: Optional[str] = None,
     splits_dir: str = "splits",
     target_height: int = 128,
     target_width: int = 2048,
@@ -123,6 +137,7 @@ def get_ocr_dataloaders(
     train_ds = OCRDataset(
         csv_path=str(splits_dir / "train.csv"),
         vocab=vocab,
+        data_dir=data_dir,
         target_height=target_height,
         target_width=target_width,
         max_samples=max_train_samples,
@@ -131,6 +146,7 @@ def get_ocr_dataloaders(
     val_ds = OCRDataset(
         csv_path=str(splits_dir / "val.csv"),
         vocab=vocab,
+        data_dir=data_dir,
         target_height=target_height,
         target_width=target_width,
         max_samples=max_val_samples,
@@ -139,6 +155,7 @@ def get_ocr_dataloaders(
     test_ds = OCRDataset(
         csv_path=str(splits_dir / "test.csv"),
         vocab=vocab,
+        data_dir=data_dir,
         target_height=target_height,
         target_width=target_width,
         max_samples=max_test_samples,
