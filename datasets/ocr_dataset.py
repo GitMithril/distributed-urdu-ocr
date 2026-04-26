@@ -62,18 +62,19 @@ class OCRDataset(Dataset):
         row = self.records.iloc[idx]
         img_path = row["image_path"]
         
+        # Normalize all slashes to forward slashes first to avoid escape character bugs
+        img_path = img_path.replace("\\", "/")
+        
         # Apply custom path mappings (useful for Kaggle/Colab nested folders)
         if self.path_mapping:
             for old_str, new_str in self.path_mapping.items():
                 if old_str in img_path:
                     img_path = img_path.replace(old_str, new_str)
         
-        # If data_dir is provided, overwrite the absolute V:\ prefix
+        # If data_dir is provided, overwrite the absolute V:/ prefix
         if self.data_dir is not None:
             import os
-            # Normalize slashes
-            rel_path = img_path.replace("\\", "/")
-            # Strip V:/ or V:\
+            rel_path = img_path
             if rel_path.lower().startswith("v:/"):
                 rel_path = rel_path[3:]
             img_path = os.path.join(self.data_dir, rel_path)
