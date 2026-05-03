@@ -73,6 +73,9 @@ pip install ipykernel
 python -m ipykernel install --user --name=torch-env --display-name "Python (torch-env)"
 ```
 
+### Optional: Train on Kaggle / Google Colab
+If you want to train the OCR model on a powerful cloud GPU without the memory overhead of the full project exploration pipeline, you can use the standalone `train_ocr_only.ipynb` notebook. This headless notebook features automatic resumption from checkpoints and supports `PATH_MAPPING` to resolve nested directories on Kaggle without needing to modify your generated CSV splits.
+
 ---
 
 ## 📁 Project Structure
