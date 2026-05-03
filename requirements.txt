@@ -56,7 +56,7 @@ wcwidth==0.6.0
 matplotlib
 opencv-python
 pandas
-dotenv
+python-dotenv
 scikit-learn
 
 segmentation-models-pytorch
@@ -65,3 +65,8 @@ arabic-reshaper
 python-bidi
 pytesseract
 jiwer
+
+# Deployment / API
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+python-multipart==0.0.9

@@ -1,0 +1,37 @@
+FROM bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+
+USER root
+
+# Fix Debian Stretch archived repositories and install dependencies
+RUN sed -i s/deb.debian.org/archive.debian.org/g /etc/apt/sources.list && \
+    sed -i 's|security.debian.org|archive.debian.org/|g' /etc/apt/sources.list && \
+    sed -i '/stretch-updates/d' /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get install -y wget bzip2 libgl1-mesa-glx libglib2.0-0 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Miniconda for a modern Python version (Debian 9 default is too old)
+# We must use an older miniconda because Debian 9 has glibc 2.24
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh -O miniconda.sh && \
+    bash miniconda.sh -b -p /opt/conda && \
+    rm miniconda.sh
+
+ENV PATH="/opt/conda/bin:${PATH}"
+
+# We will install heavy dependencies using pip
+# Using headless opencv for Docker and relaxing strict versions to ensure compatibility
+RUN pip install --no-cache-dir \
+    torch==2.5.1 torchvision==0.20.1 --extra-index-url https://download.pytorch.org/whl/cpu \
+    opencv-python-headless \
+    numpy \
+    pandas \
+    scikit-learn
+
+# Set working directory
+WORKDIR /app
+
+# The code will be mounted or copied here, but models and preprocessing
+# should be available to the python path
+ENV PYTHONPATH="${PYTHONPATH}:/app"
+
+USER root

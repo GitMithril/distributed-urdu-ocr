@@ -1,0 +1,113 @@
+version: "3"
+
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    restart: always
+    ports:
+      - 9870:9870
+      - 8020:8020
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ./deployment/hadoop/hadoop.env
+
+  datanode1:
+    build: 
+      context: .
+      dockerfile: deployment/hadoop/Dockerfile.hadoop
+    container_name: datanode1
+    restart: always
+    volumes:
+      - hadoop_datanode1:/hadoop/dfs/data
+      - ./deployment/hadoop:/app/deployment/hadoop:ro
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+      OCR_MODE: "real"
+    env_file:
+      - ./deployment/hadoop/hadoop.env
+
+  datanode2:
+    build: 
+      context: .
+      dockerfile: deployment/hadoop/Dockerfile.hadoop
+    container_name: datanode2
+    restart: always
+    volumes:
+      - hadoop_datanode2:/hadoop/dfs/data
+      - ./deployment/hadoop:/app/deployment/hadoop:ro
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+      OCR_MODE: "real"
+    env_file:
+      - ./deployment/hadoop/hadoop.env
+
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    container_name: resourcemanager
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode:8020 namenode:9870 datanode1:9864 datanode2:9864"
+    env_file:
+      - ./deployment/hadoop/hadoop.env
+    ports:
+      - 8088:8088
+
+  nodemanager:
+    build: 
+      context: .
+      dockerfile: deployment/hadoop/Dockerfile.nodemanager
+    deploy:
+      mode: replicated
+      replicas: 2
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode:8020 namenode:9870 datanode1:9864 datanode2:9864 resourcemanager:8088"
+      OCR_MODE: "real"
+      RUNPOD_ENDPOINT_ID: "z3zabzqi52jyoh"
+    env_file:
+      - ./deployment/hadoop/hadoop.env
+      - ./deployment/hadoop/.env
+    volumes:
+      - ./deployment/hadoop:/app/deployment/hadoop:ro
+
+  historyserver:
+    image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
+    container_name: historyserver
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode:8020 namenode:9870 datanode1:9864 datanode2:9864 resourcemanager:8088"
+    env_file:
+      - ./deployment/hadoop/hadoop.env
+    volumes:
+      - hadoop_historyserver:/hadoop/yarn/timeline
+    ports:
+      - 8188:8188
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: deployment/hadoop/Dockerfile.fastapi
+    container_name: fastapi
+    restart: always
+    ports:
+      - 8000:8000
+    environment:
+      SERVICE_PRECONDITION: "namenode:8020 namenode:9870 resourcemanager:8088"
+      OCR_MODE: "real"
+      RUNPOD_ENDPOINT_ID: "z3zabzqi52jyoh"
+    env_file:
+      - ./deployment/hadoop/hadoop.env
+      - ./deployment/hadoop/.env
+    volumes:
+      - ./deployment/hadoop:/app/deployment/hadoop
+      - ./preprocessing.py:/app/preprocessing.py:ro
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode1:
+  hadoop_datanode2:
+  hadoop_historyserver:
