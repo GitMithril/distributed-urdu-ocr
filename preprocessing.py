@@ -18,7 +18,6 @@ from typing import List, Tuple, Optional, Dict
 import cv2
 import numpy as np
 
-
 # ---------------------------------------------------------------------------
 # 1. Dataset Discovery
 # ---------------------------------------------------------------------------
